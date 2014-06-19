@@ -82,7 +82,7 @@ public class BerkeleyDBStoreOnDiskHandlerTest {
         keyList.add("id1");
         keyList.add("name1");
         valueList.add(1l);
-        berkeLeyMap.putData(keyList.toArray(new String[0]), valueList);
+        berkeLeyMap.putData(keyList.toArray(new String[keyList.size()]), valueList);
         Assert.assertEquals(3, berkeLeyMap.getMapSize());
         // put same key again
         valueList.set(0, 2l);
@@ -90,7 +90,7 @@ public class BerkeleyDBStoreOnDiskHandlerTest {
         Assert.assertEquals(3, berkeLeyMap.getMapSize());// the size of map is same
         Assert.assertEquals(2l, berkeLeyMap.getData(keyList.toArray(new String[0])).get(0));// use same key to get vaule and it should be
                                                                      // changed to new one
-       
+        // put two null
         berkeLeyMap.putData((String)null, valueList);
         berkeLeyMap.putData((String)null, valueList);
         Assert.assertEquals(4, berkeLeyMap.getMapSize());// put two null the size of map should add one only from 3 to 4
@@ -115,15 +115,17 @@ public class BerkeleyDBStoreOnDiskHandlerTest {
         keyList.add("id1");
         keyList.add("name1");
         valueList.add(1l);
-        berkeLeyMap.putData(keyList.toArray(new String[0]), valueList);
+        berkeLeyMap.putData(keyList.toArray(new String[keyList.size()]), valueList);
         Assert.assertEquals(3, berkeLeyMap.getMapSize());
         // get a value by not exist key will retrun a null
         List<Object> data = berkeLeyMap.getData("101");
         Assert.assertEquals(null, data);
 
+        // put a null
         berkeLeyMap.putData((String)null, valueList);
         Assert.assertEquals(4, berkeLeyMap.getMapSize());// the size of map should add one
       
+        // get a null
         data =berkeLeyMap.getData((String)null);
         Assert.assertEquals(1, data.size());
         berkeLeyMap.clear();
@@ -145,7 +147,7 @@ public class BerkeleyDBStoreOnDiskHandlerTest {
         keyList.add("id1");
         keyList.add("name1");
         valueList.add(1l);
-        berkeLeyMap.putData(keyList.toArray(new String[0]), valueList);
+        berkeLeyMap.putData(keyList.toArray(new String[keyList.size()]), valueList);
         Assert.assertEquals(3, berkeLeyMap.getMapSize());
 
         // remove one data which key is 100
@@ -169,11 +171,14 @@ public class BerkeleyDBStoreOnDiskHandlerTest {
         berkeLeyMap.putData((String)null, valueList);
         Assert.assertEquals(3, berkeLeyMap.getMapSize());// the size of map should added one
         
+        //remove the null again
         isSuccess =berkeLeyMap.removeData((String)null);
         Assert.assertEquals(true,isSuccess);
         Assert.assertEquals(2, berkeLeyMap.getMapSize());// the size of map should added one
+        
+        //clear the map
         berkeLeyMap.clear();
-        berkeLeyMap.initBerkeleyDbEnv();
+        berkeLeyMap.initBerkeleyDbEnv();//init again at here is used to get the size of map, normal case we don't need init again
         Assert.assertEquals(0, berkeLeyMap.getMapSize());// after clear the size of the map should be zero
         berkeLeyMap.close();
     }

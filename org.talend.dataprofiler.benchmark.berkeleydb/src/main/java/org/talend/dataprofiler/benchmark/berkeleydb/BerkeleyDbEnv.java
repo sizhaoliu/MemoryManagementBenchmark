@@ -57,6 +57,9 @@ public class BerkeleyDbEnv {
         myEnvConfig.setTransactional(!readOnly);
         dbConfig.setTransactional(!readOnly);
         catalogConfig.setTransactional(!readOnly);
+        
+        myEnvConfig.setCachePercent(10);
+        myEnvConfig.setCacheSize(98304);
 
         // Open the environment
         dbEnv = new Environment(envHome, myEnvConfig);
