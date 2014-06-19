@@ -14,6 +14,7 @@ package org.talend.dataprofiler.benchmark.berkeleydb;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.sleepycat.bind.EntryBinding;
@@ -49,7 +50,10 @@ public class BerkeleyDBStoreOnDiskHandler {
      * @param value
      */
     public void putData(String key, Object value) {
-        DataListRow valueListRow = new DataListRow(value);
+        DataListRow valueListRow = new DataListRow();
+        valueListRow.getKeys().add(key);
+    	valueListRow.getValue().add(value);
+    	
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
         EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
         TupleBinding<String> stringBinding = TupleBinding.getPrimitiveBinding(String.class);
@@ -68,7 +72,10 @@ public class BerkeleyDBStoreOnDiskHandler {
      */
     public void putData(String[] key, Object value) {
     	String keyString = ConvertToKey(key);
-    	DataListRow valueListRow = new DataListRow(value);
+    	DataListRow valueListRow = new DataListRow();
+    	valueListRow.getKeys().addAll(Arrays.asList(key));
+    	valueListRow.getValue().add(value);
+    	
     	StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
     	EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
     	TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
@@ -87,7 +94,9 @@ public class BerkeleyDBStoreOnDiskHandler {
      */
     public void putData(String[] key, List<Object> value) {
     	String keyString = ConvertToKey(key);
-    	DataListRow valueListRow = new DataListRow(value);
+    	DataListRow valueListRow = new DataListRow();
+    	valueListRow.getKeys().addAll(Arrays.asList(key));
+    	valueListRow.getValue().addAll(value);
     	StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
     	EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
     	TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
@@ -114,7 +123,7 @@ public class BerkeleyDBStoreOnDiskHandler {
         integerBinding.objectToEntry(key, keyEntry);
         if(berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT)==OperationStatus.SUCCESS){
         	DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
-        	return valueListRow.getData();
+        	return valueListRow.getValue();
         }else{
         	return null;
         }
@@ -137,7 +146,7 @@ public class BerkeleyDBStoreOnDiskHandler {
         integerBinding.objectToEntry(keyString, keyEntry);
         if(berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT)==OperationStatus.SUCCESS){
         	DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
-        	return valueListRow.getData();
+        	return valueListRow.getValue();
         }else{
         	return null;
         }

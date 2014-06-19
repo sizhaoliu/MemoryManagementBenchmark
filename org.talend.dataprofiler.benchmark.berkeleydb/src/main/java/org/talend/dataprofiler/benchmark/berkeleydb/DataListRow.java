@@ -21,29 +21,32 @@ import java.util.List;
  * 
  */
 public class DataListRow implements Serializable {
-
-    protected List<Object> data = new ArrayList<Object>();
+	
+	private static final long serialVersionUID = -1898675216005084539L;
+	protected List<Object> values = new ArrayList<Object>();
+    protected List<Object> keys = new ArrayList<Object>();
 
     /**
-     * Getter for data.
+     * Getter for values.
      * 
-     * @return the data
+     * @return the values
      */
-    public List<Object> getData() {
-        return this.data;
+    public List<Object> getValue() {
+        return this.values;
     }
+    
+    /**
+     * Getter for keys.
+     * @return the keys
+     */
 
-    public DataListRow(List<Object> data) {
-        this.data.addAll(data);
-    }
+    public List<Object> getKeys() {
+		return keys;
+	}
 
-    public DataListRow(Object[] dataArrays) {
-        for (Object data : dataArrays) {
-            this.data.add(data);
-        }
-    }
 
-    public DataListRow(Object data) {
-        this.data.add(data);
+
+	public DataListRow() {
     }
+	
 }
