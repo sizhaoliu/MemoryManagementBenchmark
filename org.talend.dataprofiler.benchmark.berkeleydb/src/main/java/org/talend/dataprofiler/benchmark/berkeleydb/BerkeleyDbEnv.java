@@ -19,6 +19,9 @@ public class BerkeleyDbEnv {
 
     // The databases that our application uses
     private Database dataDb;
+    
+    private final String CLASSCATALOGDBNAME="ClassCatalogDB";
+    private final String DATADBNAME="dataDB";
 
     private Database classCatalogDb;
 
@@ -60,16 +63,14 @@ public class BerkeleyDbEnv {
 
         // Now open, or create and open, our databases
         // Open the vendors and inventory databases
-        dataDb = dbEnv.openDatabase(null, "VendorDB", dbConfig);
+        dataDb = dbEnv.openDatabase(null, DATADBNAME, dbConfig);
 
         // Open the class catalog db. This is used to
         // optimize class serialization.
-        classCatalogDb = dbEnv.openDatabase(null, "ClassCatalogDB", dbConfig);
+        classCatalogDb = dbEnv.openDatabase(null, CLASSCATALOGDBNAME, dbConfig);
 
         // Create our class catalog
         classCatalog = new StoredClassCatalog(classCatalogDb);
-
-        EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
 
     }
 
@@ -93,7 +94,11 @@ public class BerkeleyDbEnv {
      * Clear database
      */
     public void clearDatabase() {
-        this.dbEnv.truncateDatabase(null, dataDb.getDatabaseName(), false);
+    	  dataDb.close();
+          classCatalogDb.close();
+        this.dbEnv.removeDatabase(null, CLASSCATALOGDBNAME);
+        this.dbEnv.removeDatabase(null, DATADBNAME);
+        
     }
 
     // Close the environment
@@ -103,9 +108,7 @@ public class BerkeleyDbEnv {
                 // Close the secondary before closing the primaries
                 dataDb.close();
                 classCatalogDb.close();
-
-                // Finally, close the environment.
-                dbEnv.close();
+                this.dbEnv.close();
             } catch (DatabaseException dbe) {
                 System.err.println("Error closing MyDbEnv: " + dbe.toString());
                 System.exit(-1);

@@ -13,6 +13,7 @@
 package org.talend.dataprofiler.benchmark.berkeleydb;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.sleepycat.bind.EntryBinding;
@@ -21,6 +22,7 @@ import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.LockMode;
+import com.sleepycat.je.OperationStatus;
 
 /**
  * created by talend on Jun 17, 2014 Detailled comment
@@ -36,7 +38,7 @@ public class BerkeleyDBStoreOnDiskHandler {
 
     public void initBerkeleyDbEnv() {
         berkeleyDbEnv = new BerkeleyDbEnv();
-        berkeleyDbEnv.setup(new File("d:\\tmp\\JEDB1"), false);
+        berkeleyDbEnv.setup(new File("d:\\tmp\\JEDB2"), false);
     }
 
     /**
@@ -46,15 +48,14 @@ public class BerkeleyDBStoreOnDiskHandler {
      * @param key
      * @param value
      */
-    public void putData(Object key, Object value) {
-        int hashCode = key.hashCode();
+    public void putData(String key, Object value) {
         DataListRow valueListRow = new DataListRow(value);
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
         EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
-        TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
+        TupleBinding<String> stringBinding = TupleBinding.getPrimitiveBinding(String.class);
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry valueEntry = new DatabaseEntry();
-        integerBinding.objectToEntry(hashCode, keyEntry);
+        stringBinding.objectToEntry(key, keyEntry);
         dataBinding.objectToEntry(valueListRow, valueEntry);
         berkeleyDbEnv.getDataDB().put(null, keyEntry, valueEntry);
     }
@@ -65,15 +66,34 @@ public class BerkeleyDBStoreOnDiskHandler {
      * @param key
      * @param value
      */
-    public void putData(Object[] key, Object value) {
-    	int hashCode = key.hashCode();
+    public void putData(String[] key, Object value) {
+    	String keyString = ConvertToKey(key);
     	DataListRow valueListRow = new DataListRow(value);
     	StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
     	EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
-    	TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
+    	TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
     	DatabaseEntry keyEntry = new DatabaseEntry();
     	DatabaseEntry valueEntry = new DatabaseEntry();
-    	integerBinding.objectToEntry(hashCode, keyEntry);
+    	integerBinding.objectToEntry(keyString, keyEntry);
+    	dataBinding.objectToEntry(valueListRow, valueEntry);
+    	berkeleyDbEnv.getDataDB().put(null, keyEntry, valueEntry);
+    }
+    /**
+     * 
+     * Put key and value into file BD. If key is same the old value will be rewrited
+     * 
+     * @param key
+     * @param value
+     */
+    public void putData(String[] key, List<Object> value) {
+    	String keyString = ConvertToKey(key);
+    	DataListRow valueListRow = new DataListRow(value);
+    	StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
+    	EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
+    	TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
+    	DatabaseEntry keyEntry = new DatabaseEntry();
+    	DatabaseEntry valueEntry = new DatabaseEntry();
+    	integerBinding.objectToEntry(keyString, keyEntry);
     	dataBinding.objectToEntry(valueListRow, valueEntry);
     	berkeleyDbEnv.getDataDB().put(null, keyEntry, valueEntry);
     }
@@ -85,17 +105,19 @@ public class BerkeleyDBStoreOnDiskHandler {
      * @param key
      * @return empty list if can not find a value by the key
      */
-    public List<Object> getData(Object key) {
-        int hashCode = key.hashCode();
+    public List<Object> getData(String key) {
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
         EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
-        TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
+        TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry valueEntry = new DatabaseEntry();
-        integerBinding.objectToEntry(hashCode, keyEntry);
-        berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT);
-        DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
-        return valueListRow.getData();
+        integerBinding.objectToEntry(key, keyEntry);
+        if(berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT)==OperationStatus.SUCCESS){
+        	DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
+        	return valueListRow.getData();
+        }else{
+        	return null;
+        }
     }
 
     /**
@@ -105,17 +127,20 @@ public class BerkeleyDBStoreOnDiskHandler {
      * @param keyArray
      * @return empty list if can not find a value by the keyArray
      */
-    public List<Object> getData(Object[] keyArray) {
-        int hashCode = keyArray.hashCode();
+    public List<Object> getData(String[] keyArray) {
+        String keyString = ConvertToKey(keyArray);
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
         EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
-        TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
+        TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry valueEntry = new DatabaseEntry();
-        integerBinding.objectToEntry(hashCode, keyEntry);
-        berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT);
-        DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
-        return valueListRow.getData();
+        integerBinding.objectToEntry(keyString, keyEntry);
+        if(berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT)==OperationStatus.SUCCESS){
+        	DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
+        	return valueListRow.getData();
+        }else{
+        	return null;
+        }
     }
 
     /**
@@ -123,13 +148,17 @@ public class BerkeleyDBStoreOnDiskHandler {
      * Remove the data by special keyArray.
      * 
      * @param keyArray if it is null will cause NullPoiniterException
+     * @return true if remove opertaion is success else return false
      */
-    public void removeData(Object[] keyArray) {
-        int hashCode = keyArray.hashCode();
+    public boolean removeData(String[] keyArray) {
+        String keyString = ConvertToKey(keyArray);
         DatabaseEntry keyEntry = new DatabaseEntry();
-        TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
-        integerBinding.objectToEntry(hashCode, keyEntry);
-        berkeleyDbEnv.getDataDB().delete(null, keyEntry);
+        TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
+        integerBinding.objectToEntry(keyString, keyEntry);
+        if(berkeleyDbEnv.getDataDB().delete(null, keyEntry)==OperationStatus.SUCCESS){
+        	return true;
+        }
+        return false;
     }
 
     /**
@@ -137,13 +166,16 @@ public class BerkeleyDBStoreOnDiskHandler {
      * Remove the data by special key.
      * 
      * @param key if it is null will cause NullPoiniterException
+     * @return true if remove opertaion is success else return false
      */
-    public void removeData(Object key) {
-        int hashCode = key.hashCode();
+    public boolean removeData(String key) {
         DatabaseEntry keyEntry = new DatabaseEntry();
-        TupleBinding<Integer> integerBinding = TupleBinding.getPrimitiveBinding(Integer.class);
-        integerBinding.objectToEntry(hashCode, keyEntry);
-        berkeleyDbEnv.getDataDB().delete(null, keyEntry);
+        TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
+        integerBinding.objectToEntry(key, keyEntry);
+        if(berkeleyDbEnv.getDataDB().delete(null, keyEntry)==OperationStatus.SUCCESS){
+        	return true;
+        }
+        return false;
     }
 
     /**
@@ -170,4 +202,15 @@ public class BerkeleyDBStoreOnDiskHandler {
     public void close() {
         berkeleyDbEnv.close();
     }
+    
+   private String ConvertToKey(String[] input){
+	   if(input==null){
+		   return "";
+	   }
+	   StringBuffer strBuf=new StringBuffer();
+	  for(String str:input){
+		  strBuf.append(str);
+		  	  }
+	  return strBuf.toString();
+   }
 }
