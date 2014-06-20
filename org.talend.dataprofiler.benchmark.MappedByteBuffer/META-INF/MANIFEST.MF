@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MappedByteBuffer
+Bundle-SymbolicName: org.talend.dataprofiler.benchmark.MappedByteBuffer
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: .,
+ lib/advancedPersistentLookupLib-1.0.jar
+Require-Bundle: org.junit
