@@ -35,7 +35,7 @@ public class ColumnSetLookupManager extends AbstratcLookupManager<ColumnSetRow> 
 
     private IRowCreator<ColumnSetRow> rowCreator;
 
-    private Long maxLength = 100000l;
+    private Long maxLength = 1024*1024*1024l;
 
     // this file should be init when we write something
     private MappedByteBuffer mbb = null;

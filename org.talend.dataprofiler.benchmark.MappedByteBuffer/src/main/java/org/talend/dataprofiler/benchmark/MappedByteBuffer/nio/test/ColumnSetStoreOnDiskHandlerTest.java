@@ -74,7 +74,6 @@ public class ColumnSetStoreOnDiskHandlerTest {
      * 
      * @throws Exception
      */
-    @Test
     public void testHandleRow() throws Exception {
         ColumnSetStoreOnDiskHandler colSetHandler = null;
         colSetHandler = new ColumnSetStoreOnDiskHandler("d:\\tmp\\JEDB2\\", 3);
@@ -92,6 +91,35 @@ public class ColumnSetStoreOnDiskHandlerTest {
         boolean isDeletePersistenceFile = colSetHandler.deletePersistenceFile();
         Assert.assertEquals(true, isDeletePersistenceFile);
         
+    }
+    /**
+     * Test method for {@link javatest.nio.handler.ColumnSetStoreOnDiskHandler#handleRow(java.lang.Object[])}.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testHugeData() throws Exception {
+    	setStartT();
+    	ColumnSetStoreOnDiskHandler colSetHandler = null;
+    	colSetHandler = new ColumnSetStoreOnDiskHandler("d:\\tmp\\JEDB2\\", 3);
+    	colSetHandler.beginQuery();
+    	for(int index=0;index<100000;index++){
+    		for(String[] dataItem:initRandomData()){    	
+    			colSetHandler.handleRow(dataItem);
+    		}
+    	}
+    	Assert.assertEquals(100000l, colSetHandler.getRowCount().longValue());
+    	colSetHandler.endQuery();
+    	ellipseT();
+    	colSetHandler.computeResult();
+    	ellipseT();
+    	Assert.assertEquals(colSetHandler.getDistinctCount().longValue(), colSetHandler.getDuplicateCount().longValue()+colSetHandler.getUniqueCount().longValue());
+    	
+    }
+    private List<String[]> initRandomData() {
+    	List<String[]> returnList = new ArrayList<String[]>();
+    	returnList.add(new String[] { "name"+Math.random(), "id"+Math.random(), "city"+Math.random() });//	1	
+    	return returnList;
     }
 
     private List<Object[]> initData() {
@@ -114,5 +142,20 @@ public class ColumnSetStoreOnDiskHandlerTest {
         returnList.add(new Object[] { "name4", "id4", "city4" });//				4
         return returnList;
     }
+    
+    static long startT = 0;
+
+    static long endT = 0;
+    public static void setStartT() {
+        startT = System.currentTimeMillis();
+    }
+
+    public static long ellipseT() {
+        endT = System.currentTimeMillis();
+        long consumeT = endT - startT;
+        System.out.println("consume time :" + consumeT / 1000 + " second");
+        return consumeT / 1000;
+    }
+
 
 }
