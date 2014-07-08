@@ -33,7 +33,7 @@ public class MapDBTestForOffHeap {
     	 DB db = DBMaker.newMemoryDirectDB().closeOnJvmShutdown().transactionDisable().make();
     	 ConcurrentNavigableMap<String, Long> dbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
     	 Store memoryDbStore = Store.forDB(db);
-    	for(int index=0;index<2.5e5;index++){
+    	for(int index=0;index<1e7;index++){
     		for(String[] dataItem:initRandomData()){
     			 Long frequency = dbMap.get(ConvertToKey(dataItem));
     			if(frequency!=null){
@@ -44,23 +44,23 @@ public class MapDBTestForOffHeap {
     			dbMap.put(ConvertToKey(dataItem), frequency);
     		}
     	}
-    	for(int index=0;index<3.75e4;index++){
-    		for(String[] dataItem:initData()){
-    			Long frequency = dbMap.get(ConvertToKey(dataItem));
-    			if(frequency!=null){
-    				frequency++;
-    			}else{
-    				frequency=1l;
-    			}
-    			dbMap.put(ConvertToKey(dataItem), frequency);
-    		}
-    	}
+//    	for(int index=0;index<3.75e4;index++){
+//    		for(String[] dataItem:initData()){
+//    			Long frequency = dbMap.get(ConvertToKey(dataItem));
+//    			if(frequency!=null){
+//    				frequency++;
+//    			}else{
+//    				frequency=1l;
+//    			}
+//    			dbMap.put(ConvertToKey(dataItem), frequency);
+//    		}
+//    	}
     	System.out.println(memoryDbStore.getCurrSize()/1024);
     	ellipseT();
     	computeResult((BTreeMap)dbMap);
     	ellipseT();
 //    	Assert.assertEquals(10l, distinctCount.longValue());
-    	Assert.assertEquals(1000000l, rowCount.longValue());
+    	Assert.assertEquals(10000000l, rowCount.longValue());
     	Assert.assertEquals(uniqueCount.longValue(), distinctCount.longValue()-duplicateCount.longValue());
 //    	Assert.assertEquals(0l, uniqueCount.longValue());
 //    	Assert.assertEquals(10l, duplicateCount.longValue());

@@ -4,6 +4,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import junit.framework.Assert;
@@ -11,8 +13,10 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;
+import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.Fun;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.mapdb.Store;
@@ -31,24 +35,31 @@ public class MapDBTestForUseApiCompute {
 	@Test
     public void testHugeDataForTreeMap() throws UnsupportedEncodingException{
     	setStartT();
-    	DB fileDb =DBMaker.newMemoryDirectDB().closeOnJvmShutdown().transactionDisable().make();
+    	DB fileDb =DBMaker.newTempFileDB().asyncWriteFlushDelay(100).closeOnJvmShutdown().transactionDisable().make();
 //    	 BTreeMap<Long, String> dbMap = fileDb.createTreeMap("test").keySerializer(BTreeKeySerializer.ZERO_OR_POSITIVE_LONG).valueSerializer(Serializer.STRING).make();
     	 HTreeMap<Long, String> dbMap = fileDb.createHashMap("test").keySerializer(Serializer.LONG).valueSerializer(Serializer.STRING).make();
 //    	 HTreeMap<Long, String> dbMap = fileDb.createHashMap("test").keySerializer(Serializer.LONG).valueSerializer(Serializer.STRING).make();
+    	 NavigableSet<Fun.Tuple2<String, Long>> inverseMapping = new TreeSet<Fun.Tuple2<String, Long>>();
+    	 Bind.mapInverse(dbMap, inverseMapping);
     	 Store store = Store.forDB(fileDb);
     	 boolean memoryIsOut=false;
-    	for(int index=0;index<1e6;index++){
-    		for(String[] dataItem:initRandomData()){
-    			dbMap.put(Long.valueOf(index),ConvertToKey(dataItem));
+    	 int tempIndex=1;
+    	for(int index=0;index<5e4;index++){
+    		for(String[] dataItem:initData()){
+    			
+    			dbMap.put(Long.valueOf(tempIndex),ConvertToKey(dataItem));
+    			tempIndex++;
     		}
     			
     	}
+//            System.out.println("Key for 'value' size is: "+inverseMapping.subSet(Fun.t2("name5id5city5", (Long)null), Fun.t2("name5id5city5", (Long)Fun.HI)));
+    	
     	System.out.println(store.getCurrSize()/1024);
     	ellipseT();
 //    	computeResult(dbMap);
     	ellipseT();
 //    	Assert.assertEquals(10l, distinctCount.longValue());
-    	Assert.assertEquals(1000000l, rowCount.longValue());
+    	Assert.assertEquals(20l, rowCount.longValue());
     	Assert.assertEquals(uniqueCount.longValue(), distinctCount.longValue()-duplicateCount.longValue());
 //    	Assert.assertEquals(0l, uniqueCount.longValue());
 //    	Assert.assertEquals(10l, duplicateCount.longValue());
@@ -77,26 +88,30 @@ public class MapDBTestForUseApiCompute {
 //    	}
     }
     
-    private List<String[]> initData() {
-        List<String[]> returnList = new ArrayList<String[]>();
-        returnList.add(new String[] { "name1", "id1", "city1" });//	1	
-        returnList.add(new String[] { "name6", "id6", "city6" });//						6
-        returnList.add(new String[] { "name4", "id4", "city4" });//				4
-        returnList.add(new String[] { "name5", "id5", "city5" });//					5
-        returnList.add(new String[] { "name8", "id8", "city8" });//								8
-        returnList.add(new String[] { "name3", "id3", "city3" });//			3
-        returnList.add(new String[] { "name7", "id7", "city7" });//							7
-        returnList.add(new String[] { "name2", "id2", "city2" });//		2
-        returnList.add(new String[] { "name9", "id9", "city9" });//									9
-        returnList.add(new String[] { "name4", "id4", "city4" });//				4
-        returnList.add(new String[] { "name3", "id3", "city3" });//			3
-        returnList.add(new String[] { "name0", "id0", "city0" });//0
-        returnList.add(new String[] { "name4", "id4", "city4" });//				4
-        returnList.add(new String[] { "name2", "id2", "city2" });//		2
-        returnList.add(new String[] { "name3", "id3", "city3" });//			3
-        returnList.add(new String[] { "name4", "id4", "city4" });//				4
-        return returnList;
-    }
+	 private List<String[]> initData() {
+	        List<String[]> returnList = new ArrayList<String[]>();
+	        returnList.add(new String[] { "name1", "id1", "city1" });//	1	
+	        returnList.add(new String[] { "name6", "id6", "city6" });//						6
+	        returnList.add(new String[] { "name4", "id4", "city4" });//				4
+	        returnList.add(new String[] { "name5", "id5", "city5" });//					5
+	        returnList.add(new String[] { "name8", "id8", "city8" });//								8
+	        returnList.add(new String[] { "name3", "id3", "city3" });//			3
+	        returnList.add(new String[] { "name7", "id7", "city7" });//							7
+	        returnList.add(new String[] { "name5", "id5", "city5" });//					5
+	        returnList.add(new String[] { "name2", "id2", "city2" });//		2
+	        returnList.add(new String[] { "name9", "id9", "city9" });//									9
+	        returnList.add(new String[] { "name4", "id4", "city4" });//				4
+	        returnList.add(new String[] { "name3", "id3", "city3" });//			3
+	        returnList.add(new String[] { "name5", "id5", "city5" });//					5
+	        returnList.add(new String[] { "name0", "id0", "city0" });//0
+	        returnList.add(new String[] { "name4", "id4", "city4" });//				4
+	        returnList.add(new String[] { "name2", "id2", "city2" });//		2
+	        returnList.add(new String[] { "name5", "id5", "city5" });//					5
+	        returnList.add(new String[] { "name3", "id3", "city3" });//			3
+	        returnList.add(new String[] { "name4", "id4", "city4" });//				4
+	        returnList.add(new String[] { "name5", "id5", "city5" });//					5
+	        return returnList;
+	    }
     private List<String[]> initRandomData() {
     	List<String[]> returnList = new ArrayList<String[]>();
     	returnList.add(new String[] { "name"+Math.random(), "id"+Math.random(), "city"+Math.random() });//	1	
