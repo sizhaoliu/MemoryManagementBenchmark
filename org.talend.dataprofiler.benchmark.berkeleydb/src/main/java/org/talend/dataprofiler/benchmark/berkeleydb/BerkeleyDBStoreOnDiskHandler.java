@@ -21,6 +21,7 @@ import com.sleepycat.bind.EntryBinding;
 import com.sleepycat.bind.serial.SerialBinding;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.bind.tuple.TupleBinding;
+import com.sleepycat.je.Cursor;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
@@ -112,7 +113,7 @@ public class BerkeleyDBStoreOnDiskHandler {
      * Get the value which key is key
      * 
      * @param key
-     * @return empty list if can not find a value by the key
+     * @return null if can not find a value by the key
      */
     public List<Object> getData(String key) {
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
@@ -134,16 +135,16 @@ public class BerkeleyDBStoreOnDiskHandler {
      * Get the value which key is keyArray
      * 
      * @param keyArray
-     * @return empty list if can not find a value by the keyArray
+     * @return null if can not find a value by the keyArray
      */
     public List<Object> getData(String[] keyArray) {
         String keyString = ConvertToKey(keyArray);
         StoredClassCatalog classCatalog = berkeleyDbEnv.getClassCatalog();
         EntryBinding<DataListRow> dataBinding = new SerialBinding<DataListRow>(classCatalog, DataListRow.class);
-        TupleBinding<String> integerBinding = TupleBinding.getPrimitiveBinding(String.class);
+        TupleBinding<String> stringBinding = TupleBinding.getPrimitiveBinding(String.class);
         DatabaseEntry keyEntry = new DatabaseEntry();
         DatabaseEntry valueEntry = new DatabaseEntry();
-        integerBinding.objectToEntry(keyString, keyEntry);
+        stringBinding.objectToEntry(keyString, keyEntry);
         if(berkeleyDbEnv.getDataDB().get(null, keyEntry, valueEntry, LockMode.DEFAULT)==OperationStatus.SUCCESS){
         	DataListRow valueListRow = dataBinding.entryToObject(valueEntry);
         	return valueListRow.getValue();
@@ -221,5 +222,9 @@ public class BerkeleyDBStoreOnDiskHandler {
 		  strBuf.append(str);
 		  	  }
 	  return strBuf.toString();
+   }
+   
+   public Cursor getCursor(){
+	  return berkeleyDbEnv.getDataDB().openCursor(null, null);
    }
 }
