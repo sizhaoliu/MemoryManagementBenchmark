@@ -37,7 +37,7 @@ public class HashMapTestForJava {
 //	    	 DB db = DBMaker.newTempFileDB().asyncWriteFlushDelay(100).closeOnJvmShutdown().transactionDisable().make();
 //	    	 ConcurrentNavigableMap<String, Long> dbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
 	    	
-	    	for(int index=0;index<7e6;index++){
+	    	for(int index=0;index<5e7;index++){
 	    		try{
 	    		for(String[] dataItem:initRandomData()){
 	    			String keyStr=ConvertToKey(dataItem);
@@ -73,7 +73,7 @@ public class HashMapTestForJava {
 	    	computeResult(tempMap);
 	    	ellipseT();
 //	    	Assert.assertEquals(10l, distinctCount.longValue());
-	    	Assert.assertEquals(7000000l, rowCount.longValue());
+	    	Assert.assertEquals(1000000l, rowCount.longValue());
 	    	Assert.assertEquals(uniqueCount.longValue(), distinctCount.longValue()-duplicateCount.longValue());
 //	    	Assert.assertEquals(0l, uniqueCount.longValue());
 //	    	Assert.assertEquals(10l, duplicateCount.longValue());

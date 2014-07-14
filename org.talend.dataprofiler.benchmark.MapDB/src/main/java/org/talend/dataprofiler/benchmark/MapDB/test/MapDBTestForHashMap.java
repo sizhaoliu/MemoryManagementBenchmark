@@ -28,9 +28,9 @@ public class MapDBTestForHashMap {
 	@Test
 	public void testHugeDataForHashMap() throws UnsupportedEncodingException{
 		setStartT();
-		DB db = DBMaker.newTempFileDB().cacheLRUEnable().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
+		DB db = DBMaker.newTempFileDB().mmapFileEnablePartial().cacheSize(10*1024).asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
 		HTreeMap<String, Long> dbMap = db.createHashMap("test").keySerializer(Serializer.STRING).valueSerializer(Serializer.LONG).make();
-		for(int index=0;index<1e7;index++){
+		for(int index=0;index<5e7;index++){
 			for(String[] dataItem:initRandomData()){
 				Long frequency = dbMap.get(ConvertToKey(dataItem));
 				if(frequency!=null){
@@ -41,7 +41,7 @@ public class MapDBTestForHashMap {
 				dbMap.put(ConvertToKey(dataItem), frequency);
 			}
 		}
-//		for(int index=0;index<3.75e4;index++){
+//		for(int index=0;index<1.25e5;index++){
 //			for(String[] dataItem:initData()){
 //				Long frequency = dbMap.get(ConvertToKey(dataItem));
 //				if(frequency!=null){
@@ -56,11 +56,13 @@ public class MapDBTestForHashMap {
 		computeResult(dbMap);
 		ellipseT();
 //    	Assert.assertEquals(10l, distinctCount.longValue());
-		Assert.assertEquals(10000000l, rowCount.longValue());
+		Assert.assertEquals(50000000l, rowCount.longValue());
 		Assert.assertEquals(uniqueCount.longValue(), distinctCount.longValue()-duplicateCount.longValue());
 //    	Assert.assertEquals(0l, uniqueCount.longValue());
 //    	Assert.assertEquals(10l, duplicateCount.longValue());
 		db.close();
+		System.out.println("end");
+		ellipseT();
 	}
     
     private void computeResult(HTreeMap<String, Long> dbMap) throws UnsupportedEncodingException{

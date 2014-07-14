@@ -24,8 +24,10 @@ import org.mapdb.Serializer;
 import org.mapdb.Store;
 import org.mapdb.StoreHeap;
 
+import com.sun.management.OperatingSystemMXBean;
 
-public class MapDBTestForMixMode {
+
+public class MapDBTestForMixModeNewTest {
 	
 	private Long distinctCount = 0l;
 
@@ -39,36 +41,40 @@ public class MapDBTestForMixMode {
     
 	@Test
     public void testHugeDataForTreeMap() throws UnsupportedEncodingException{
+		OperatingSystemMXBean bean =
+				  (OperatingSystemMXBean)
+				    java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+				long max = bean.getFreePhysicalMemorySize();
+				double formatMemoryInGB=max/1024.0/1024.0/1024.0;
     	setStartT();
-    	DB fileDb =DBMaker.newTempFileDB().cacheSize(12*1024).mmapFileEnableIfSupported().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
-    	 DB db = DBMaker.newMemoryDirectDB().sizeLimit(1).closeOnJvmShutdown().transactionDisable().make();
-    	 BTreeMap<String,Long> memoryDbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
+    	DB fileDb =DBMaker.newTempFileDB().sizeLimit(1).cacheSize(12*1024).mmapFileEnableIfSupported().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
+    	 BTreeMap<String,Long> fileDbMap = fileDb.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
+    	DB slowFileDb = DBMaker.newTempFileDB().cacheSize(12*1024).mmapFileEnablePartial().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
 //    	 HTreeMap<String, Long> memoryDbMap = db.createHashMap("test").keySerializer(Serializer.STRING).valueSerializer(Serializer.LONG).make();
 //    	 HTreeMap<String, Long> fileDbMap= fileDb.createHashMap("test").keySerializer(Serializer.STRING).valueSerializer(Serializer.LONG).make();
-    	 Store memoryDbStore = Store.forDB(db);
+    	 Store fileDbStore = Store.forDB(fileDb);
     	for(int index=0;index<1e7;index++){
-    		if(memoryDbStore.getSizeLimit()-memoryDbStore.getCurrSize()<=1024*1024*1){
+    		if(!fileDb.isClosed()&& fileDbStore.getSizeLimit()-fileDbStore.getCurrSize()<=1024*1024*500){
 //    			System.out.println(store.calculateStatistics());
     			//copy data to file when the size of memory is too large
-    			System.out.println("1111"+memoryDbStore.getCurrSize()/1024);
+    			System.out.println("1111"+fileDbStore.getCurrSize()/1024);
     			ellipseT();
-    			copyDataToFile(memoryDbMap,fileDb);
-    			db.close();
-    			db = DBMaker.newMemoryDirectDB().sizeLimit(1).closeOnJvmShutdown().transactionDisable().make();
-    	    	memoryDbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
+    			fileDbMap=copyDataToFile(fileDbMap,slowFileDb);
+    			fileDb.close();
+//    	    	fileDbMap = slowFileDb.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
 //    	    	memoryDbMap = db.createHashMap("test").keySerializer(Serializer.STRING).valueSerializer(Serializer.LONG).make();
-    	    	memoryDbStore = Store.forDB(db);
+//    	    	fileDbStore = Store.forDB(slowFileDb);
     		}
     		for(String[] dataItem:initRandomData()){
     			String convertToKey = ConvertToKey(dataItem);
-    			Long frequency = memoryDbMap.get(convertToKey);
+    			Long frequency = fileDbMap.get(convertToKey);
     			if(frequency!=null){
     				frequency++;
     				
     			}else{
     				frequency=1l;
     			}
-    			memoryDbMap.put(convertToKey, frequency);
+    			fileDbMap.put(convertToKey, frequency);
     		}
 //    		copyDataToFile(memoryDbMap,fileDb,fileDbMap);
 //    		db.close();
@@ -104,27 +110,24 @@ public class MapDBTestForMixMode {
 //    	}
     	
     	//copy last data which leave at memory
-    	System.out.println(memoryDbStore.getCurrSize()/1024);
+    	System.out.println(fileDbStore.getCurrSize()/1024);
 		ellipseT();
-		copyDataToFile(memoryDbMap,fileDb);
-		db.close();
-    	ellipseT();
-    	computeResult();
+    	computeResult(fileDbMap);
     	ellipseT();
 //    	Assert.assertEquals(10l, distinctCount.longValue());
     	Assert.assertEquals(10000000l, rowCount.longValue());
     	Assert.assertEquals(uniqueCount.longValue(), distinctCount.longValue()-duplicateCount.longValue());
 //    	Assert.assertEquals(0l, uniqueCount.longValue());
 //    	Assert.assertEquals(10l, duplicateCount.longValue());
-    	fileDb.close();
-    	if(!db.isClosed()){
-    		db.close();
+    	if(!fileDb.isClosed()){
+    		fileDb.close();
     	}
+    	slowFileDb.close();
     	System.out.println("end");
 		ellipseT();
     }
     
-    private void copyDataToFile(
+    private BTreeMap<String, Long> copyDataToFile(
     		final BTreeMap<String,Long > dbMap, DB fileDb) {
     	
     	Iterator sortIterator = Pump.sort(dbMap.keySet().iterator(), true, 100000, Collections.reverseOrder(BTreeMap.COMPARABLE_COMPARATOR), // reverse
@@ -137,47 +140,21 @@ public class MapDBTestForMixMode {
 			@Override
 			public Long run(String a) {
 				Long returnValue=dbMap.get(a);
-				Long oldValue =null;
-				//find item
-				BTreeMap<String, Long> map =findItemFromMapList(a);
-				//delete item
-				if(map!=null){
-					oldValue = map.get(a);
-					deleteItemFromMap(a,map);
-				}
-				
-				if(oldValue!=null){
-					returnValue=returnValue+oldValue;
-				}
 				return returnValue;
 			}
 
-			private void deleteItemFromMap(String a, BTreeMap<String, Long> map) {
-				map.remove(a);
-				
-			}
-
-			private BTreeMap<String, Long> findItemFromMapList(String a) {
-				for(BTreeMap<String, Long> currentMap:mapList){
-					if(currentMap.get(a)!=null){
-						return currentMap;
-					}
-				}
-				return null;
-			}
-
-            
          };
          String randomString = randomString(10);
           BTreeMap<String, Long> make = fileDb.createTreeMap("map"+randomString).pumpSource(sortIterator, valueExtractor)
         	        // .pumpPresort(100000) // for presorting data we could also use this method
-        	                .keySerializer(BTreeKeySerializer.STRING).makeOrGet();
-          mapList.add(make);
+        	                .keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).makeOrGet();
+//          mapList.add(make);
 //          fileDbMap.putAll(make);
 //          for(String key :fileDbMap.keySet()){
 //        	  System.out.println("key="+key);
 //        	  System.out.println("value="+fileDbMap.get(key));
 //          }
+          return make;
           
 	}
 //    private BTreeMap<String, Long> copyDataToFile(
@@ -194,10 +171,9 @@ public class MapDBTestForMixMode {
 //    	return fileDbMap;
 //    }
 
-	private void computeResult() throws UnsupportedEncodingException{
-    	for(BTreeMap<String, Long> oldDbMap:mapList){
-		for(String keyArrays:oldDbMap.keySet()){
-    		Long frequency = oldDbMap.get(keyArrays);
+	private void computeResult(BTreeMap<String,Long> fileDbMap) throws UnsupportedEncodingException{
+		for(String keyArrays:fileDbMap.keySet()){
+    		Long frequency = fileDbMap.get(keyArrays);
     		rowCount+=frequency;
     		distinctCount++;
     		if(frequency==1){
@@ -208,7 +184,6 @@ public class MapDBTestForMixMode {
     		
     	}
     	}
-    }
     
 	private List<String[]> initData() {
         List<String[]> returnList = new ArrayList<String[]>();

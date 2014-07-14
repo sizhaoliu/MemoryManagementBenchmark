@@ -18,7 +18,7 @@ import org.mapdb.Serializer;
 import org.mapdb.Store;
 
 
-public class MapDBTestForOffHeap {
+public class MapDBTestForMemory {
 	
 	private Long distinctCount = 0l;
 
@@ -30,11 +30,11 @@ public class MapDBTestForOffHeap {
 	@Test
     public void testHugeDataForTreeMap() throws UnsupportedEncodingException{
     	setStartT();
-    	 DB db = DBMaker.newMemoryDirectDB().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
+    	 DB db = DBMaker.newMemoryDB().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
     	 ConcurrentNavigableMap<String, Long> dbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
     	 Store memoryDbStore = Store.forDB(db);
     	 ellipseT();
-    	for(int index=0;index<4e6;index++){
+    	for(int index=0;index<2e6;index++){
     		for(String[] dataItem:initRandomData()){
     			 Long frequency = dbMap.get(ConvertToKey(dataItem));
     			if(frequency!=null){

@@ -29,9 +29,10 @@ public class MapDBTestForBTreeMap {
 	@Test
     public void testHugeDataForTreeMap() throws UnsupportedEncodingException{
     	setStartT();
-    	 DB db = DBMaker.newTempFileDB().asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
+    	 DB db = DBMaker.newTempFileDB().sizeLimit(0.5).mmapFileEnable().cacheSize(12*1024).asyncWriteEnable().closeOnJvmShutdown().transactionDisable().make();
     	 ConcurrentNavigableMap<String, Long> dbMap = db.createTreeMap("test").keySerializer(BTreeKeySerializer.STRING).valueSerializer(Serializer.LONG).make();
-    	for(int index=0;index<5e6;index++){
+    	//not duplicate
+    	 for(int index=0;index<1e7;index++){
     		for(String[] dataItem:initRandomData()){
     			 Long frequency = dbMap.get(ConvertToKey(dataItem));
     			if(frequency!=null){
@@ -42,17 +43,17 @@ public class MapDBTestForBTreeMap {
     			dbMap.put(ConvertToKey(dataItem), frequency);
     		}
     	}
-    	for(int index=0;index<2.5e5;index++){
-    		for(String[] dataItem:initData()){
-    			Long frequency = dbMap.get(ConvertToKey(dataItem));
-    			if(frequency!=null){
-    				frequency++;
-    			}else{
-    				frequency=1l;
-    			}
-    			dbMap.put(ConvertToKey(dataItem), frequency);
-    		}
-    	}
+//    	for(int index=0;index<1.25e5;index++){
+//    		for(String[] dataItem:initData()){
+//    			Long frequency = dbMap.get(ConvertToKey(dataItem));
+//    			if(frequency!=null){
+//    				frequency++;
+//    			}else{
+//    				frequency=1l;
+//    			}
+//    			dbMap.put(ConvertToKey(dataItem), frequency);
+//    		}
+//    	}
     	ellipseT();
     	computeResult((BTreeMap)dbMap);
     	ellipseT();
@@ -62,6 +63,8 @@ public class MapDBTestForBTreeMap {
 //    	Assert.assertEquals(0l, uniqueCount.longValue());
 //    	Assert.assertEquals(10l, duplicateCount.longValue());
     	db.close();
+    	System.out.println("end");
+    	ellipseT();
     }
     
     private void computeResult(BTreeMap<String, Long> dbMap) throws UnsupportedEncodingException{
